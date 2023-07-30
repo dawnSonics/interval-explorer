@@ -3,9 +3,14 @@ let sliderTiles = [];
 let myVehicle;
 
 let midiOutput;
-let isNoteOn = false;
-let isOverTile0 = false;
-let isOverTile1 = false; 
+
+// Hard coded collision detection variables
+// let isNoteOn = false;
+// let isOverTile0 = false;
+// let isOverTile1 = false; 
+
+let collisionCheckers = []
+
 const noteNumber = 60; // MIDI note number (e.g., 60 is middle C)
 
 function setup() {
@@ -20,6 +25,7 @@ function setup() {
     sliderTiles.push(new sliderTile(((74 + 20) * 5) + i * 100, 75, 'F3', 1))
     sliderTiles[i].createUnits();
     sliderTiles[i].setHandle()
+    collisionCheckers.push(false)
   }
 
   // Accessing MIDI with webmidi.js
@@ -33,6 +39,8 @@ function setup() {
 
   // console.log(sliderTileOne.units[1].id);
   // sliderTileOne.units[6].active = true;
+
+  console.log(collisionCheckers)
 }
 
 function draw() {
@@ -44,50 +52,65 @@ function draw() {
     sliderTiles[sliderTile].display()
     // sliderTiles[sliderTile].checkCollision(myVehicle)
     // myVehicle.sendNote();
+
+    if(collideRectCircle(sliderTiles[sliderTile].x, sliderTiles[sliderTile].y, sliderTiles[sliderTile].width, sliderTiles[sliderTile].height, myVehicle.pos.x, myVehicle.pos.y, 20)) {
+      if(collisionCheckers[sliderTile] == false) {
+        sendNoteOn();
+        collisionCheckers[sliderTile] = true;
+      }
+    } else {
+      if(collisionCheckers[sliderTile] == true) {
+        sendNoteOff();
+        collisionCheckers[sliderTile] = false;
+      }
+    }
   }
 
   // myVehicle.checkCollision(sliderTiles[sliderTile])
-  if (
-    myVehicle.pos.x >= sliderTiles[0].x &&
-    myVehicle.pos.x <= sliderTiles[0].x + sliderTiles[0].width &&
-    myVehicle.pos.y >= sliderTiles[0].y &&
-    myVehicle.pos.y <= sliderTiles[0].y + sliderTiles[0].height
-  ) {
-    if (!isOverTile0) {
-      // sendMIDINoteOn()
-      myVehicle.sendNoteOn();
-      isOverTile0 = true;
-      // console.log('On')
-    }
-  } else {
-    if (isOverTile0) {
-      // sendMIDINoteOff();
-      myVehicle.sendNoteOff();
-      isOverTile0 = false;
-      // console.log('Off')
-    }
-  }
 
-  if (
-    myVehicle.pos.x >= sliderTiles[1].x &&
-    myVehicle.pos.x <= sliderTiles[1].x + sliderTiles[1].width &&
-    myVehicle.pos.y >= sliderTiles[1].y &&
-    myVehicle.pos.y <= sliderTiles[1].y + sliderTiles[1].height
-  ) {
-    if (!isOverTile1) {
-      // sendMIDINoteOn()
-      myVehicle.sendNoteOn();
-      isOverTile1 = true;
-      // console.log('On')
-    }
-  } else {
-    if (isOverTile1) {
-      // sendMIDINoteOff();
-      myVehicle.sendNoteOff();
-      isOverTile1 = false;
-      // console.log('Off')
-    }
-  }
+  // Hard coded implementation of collision detection
+
+  // if (
+  //   myVehicle.pos.x >= sliderTiles[0].x &&
+  //   myVehicle.pos.x <= sliderTiles[0].x + sliderTiles[0].width &&
+  //   myVehicle.pos.y >= sliderTiles[0].y &&
+  //   myVehicle.pos.y <= sliderTiles[0].y + sliderTiles[0].height
+  // ) {
+  //   if (!isOverTile0) {
+  //     // sendMIDINoteOn()
+  //     myVehicle.sendNoteOn();
+  //     isOverTile0 = true;
+  //     // console.log('On')
+  //   }
+  // } else {
+  //   if (isOverTile0) {
+  //     // sendMIDINoteOff();
+  //     myVehicle.sendNoteOff();
+  //     isOverTile0 = false;
+  //     // console.log('Off')
+  //   }
+  // }
+
+  // if (
+  //   myVehicle.pos.x >= sliderTiles[1].x &&
+  //   myVehicle.pos.x <= sliderTiles[1].x + sliderTiles[1].width &&
+  //   myVehicle.pos.y >= sliderTiles[1].y &&
+  //   myVehicle.pos.y <= sliderTiles[1].y + sliderTiles[1].height
+  // ) {
+  //   if (!isOverTile1) {
+  //     // sendMIDINoteOn()
+  //     myVehicle.sendNoteOn();
+  //     isOverTile1 = true;
+  //     // console.log('On')
+  //   }
+  // } else {
+  //   if (isOverTile1) {
+  //     // sendMIDINoteOff();
+  //     myVehicle.sendNoteOff();
+  //     isOverTile1 = false;
+  //     // console.log('Off')
+  //   }
+  // }
 
 
   myVehicle.move();
@@ -396,16 +419,6 @@ class Vehicle {
   //   }
   // }
 
-  sendNoteOn() {
-    midiOut.channels[1].sendNoteOn(getMIDINoteFromSPN('C3'));
-    // isOverTile = true;
-  }
-
-  sendNoteOff() {
-    midiOut.channels[1].sendNoteOff(getMIDINoteFromSPN('C3'));
-    // isOverTile = false;
-  }
-
   // Write a collision detection function here
   // Get the note from the tile and display it
 
@@ -414,6 +427,16 @@ class Vehicle {
     stroke(255);
     ellipse(this.pos.x, this.pos.y, 20, 20);
   }
+}
+
+function sendNoteOn() {
+  midiOut.channels[1].sendNoteOn(getMIDINoteFromSPN('C3'));
+  // isOverTile = true;
+}
+
+function sendNoteOff() {
+  midiOut.channels[1].sendNoteOff(getMIDINoteFromSPN('C3'));
+  // isOverTile = false;
 }
 
 function onMidiEnabled() {
